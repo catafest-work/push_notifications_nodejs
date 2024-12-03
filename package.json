@@ -1,0 +1,23 @@
+{
+  "name": "push_notifications_nodejs",
+  "version": "1.0.0",
+  "description": "test push notifications with nodejs ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "private": true,
+  "keywords": [
+    "catafest",
+    "catafest-work",
+    "nodejs",
+    "javascript"
+  ],
+  "author": "catafest",
+  "license": "ISC",
+  "dependencies": {
+    "http": "^0.0.1-security",
+    "web-push": "^3.6.7"
+  }
+}

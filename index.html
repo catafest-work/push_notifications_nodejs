@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Push Notifications Demo</title>
+    <style>
+        .notification-box {
+            padding: 10px;
+            margin: 10px 0;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #output-log {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        #countdown {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        .timer {
+            background: #e0e0e0;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        /* Add these styles to the existing CSS */
+        .tooltip {
+            position: fixed;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            z-index: 1000;
+            min-height: 40px;
+            animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-out 2.5s forwards;
+            transition: top 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+<h1>Push Notifications Demo</h1>
+<div id="notification-status"></div>
+<button id="enable-notifications">Enable Notifications</button>
+<button id="show-notification">Show Notification Now</button>
+
+<div id="countdown">
+    Next notification in: <span class="timer">00:00</span>
+</div>
+
+<div id="notifications-list"></div>
+
+<h3>Action Log:</h3>
+<div id="output-log"></div>
+
+<script src="/notification_service.js"></script>
+<script>
+    const notificationService = new NotificationService();
+    const statusDiv = document.getElementById('notification-status');
+    const enableButton = document.getElementById('enable-notifications');
+    const showNotificationButton = document.getElementById('show-notification');
+    const notificationsList = document.getElementById('notifications-list');
+    const outputLog = document.getElementById('output-log');
+    const timerDisplay = document.querySelector('.timer');
+    let countdownInterval;
+    // Add this function to show tooltips
+    let tooltipOffset = 20; // Initial offset from top
+
+    function showTooltip(message, delay = 0) {
+        setTimeout(() => {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.style.top = tooltipOffset + 'px';
+            tooltip.textContent = message;
+            document.body.appendChild(tooltip);
+
+            tooltipOffset += 60; // Increase offset for next tooltip
+
+            setTimeout(() => {
+                tooltip.remove();
+                tooltipOffset -= 60; // Reset offset when tooltip is removed
+            }, 3000);
+        }, delay);
+    }
+
+    function startCountdown(seconds) {
+        clearInterval(countdownInterval);
+        let remainingTime = seconds;
+
+        function updateTimer() {
+            const minutes = Math.floor(remainingTime / 60);
+            const secs = remainingTime % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+            if (remainingTime === 0) {
+                clearInterval(countdownInterval);
+                const currentDate = new Date();
+                const nextNotificationTime = new Date(currentDate.getTime() + (300 * 1000));
+                const message = "Scheduled notification at " + currentDate.toLocaleTimeString();
+                const next_message = "Next notification at " + nextNotificationTime.toLocaleTimeString();
+
+                showTooltip("New notification incoming!");
+                // delay 0 seconds
+                showTooltip(next_message, 0);
+
+                notificationService.showNotification(message);
+                displayNotificationInHtml(message);
+                startCountdown(300);
+            }
+            remainingTime--;
+        }
+
+        updateTimer();
+        countdownInterval = setInterval(updateTimer, 1000);
+    }
+
+
+    function logOutput(message, type = 'info') {
+        const logEntry = document.createElement('div');
+        logEntry.className = type;
+        logEntry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+        outputLog.insertBefore(logEntry, outputLog.firstChild);
+    }
+
+    function displayNotificationInHtml(message) {
+        const notificationDiv = document.createElement('div');
+        notificationDiv.className = 'notification-box';
+        notificationDiv.textContent = message;
+        notificationsList.insertBefore(notificationDiv, notificationsList.firstChild);
+        logOutput(`Notification displayed in webpage: ${message}`, 'success');
+        startCountdown(300); // Start 5-minute countdown
+    }
+
+    function checkNotificationPermission() {
+        if (!('Notification' in window)) {
+            statusDiv.textContent = 'This browser does not support notifications';
+            logOutput('Browser does not support notifications', 'error');
+            return;
+        }
+        statusDiv.textContent = `Notification permission: ${Notification.permission}`;
+        logOutput(`Notification permission status: ${Notification.permission}`);
+
+        if (Notification.permission === 'granted') {
+            enableButton.style.display = 'none';
+            logOutput('Notifications are enabled', 'success');
+            startCountdown(10); // Initial 10-second countdown
+        }
+    }
+
+    enableButton.addEventListener('click', async () => {
+        try {
+            const permission = await Notification.requestPermission();
+            checkNotificationPermission();
+            if (permission === 'granted') {
+                logOutput('Notification permission granted', 'success');
+                notificationService.start();
+                startCountdown(10);
+            } else {
+                logOutput('Notification permission denied', 'error');
+            }
+        } catch (error) {
+            logOutput(`Error requesting permission: ${error}`, 'error');
+        }
+    });
+
+    // showNotificationButton.addEventListener('click', async () => {
+    //     const message = "Manual notification triggered at " + new Date().toLocaleTimeString();
+    //     await notificationService.showNotification(message);
+    //     displayNotificationInHtml(message);
+    //     logOutput('Manual notification triggered', 'success');
+    //     startCountdown(300);
+    // });
+    showNotificationButton.addEventListener('click', async () => {
+        const message = "Manual notification triggered at " + new Date().toLocaleTimeString();
+        // showTooltip("Manual notification triggered!"); // Add tooltip for immediate feedback
+        showTooltip(message, 0); // Second tooltip with delay
+        await notificationService.showNotification(message);
+        displayNotificationInHtml(message);
+        logOutput('Manual notification triggered', 'success');
+        startCountdown(300);
+    });
+
+
+    checkNotificationPermission();
+</script>
+</body>
+</html>
