@@ -19,5 +19,8 @@
   "dependencies": {
     "http": "^0.0.1-security",
     "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "cypress": "^13.16.1"
   }
 }
