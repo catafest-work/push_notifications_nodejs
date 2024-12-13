@@ -2,7 +2,7 @@
 
 - simple push notification with manual and countdown notification and tooltip
 - use these commands:
-  ```
+  ```aiignore
   npm init -y
 
   npm install http fs path
@@ -14,7 +14,7 @@
   ```
   
 ### Result is:
-  ```
+  ```aiignore
   
     > push_notifications_nodejs@1.0.0 start
     > node server.js
