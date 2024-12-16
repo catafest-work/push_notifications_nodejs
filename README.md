@@ -24,3 +24,7 @@
   ```
 
 ![alt notification_push_browser image ](notification_push_browser.png)
+
+test of changes on layer applications with javascript ! ~ !
+
+![alt notification_push_browser change layer applications image ](server_test_layer_apps.png)
